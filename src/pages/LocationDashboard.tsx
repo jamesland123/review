@@ -67,4 +67,43 @@ export default function LocationDashboard() {
         .from('reviews')
         .select('*')
         .eq('location_id', locationData.id)
-        .order('review_date', { asce_
+        .order('review_date', { ascending: false });
+
+      if (reviewsError) throw reviewsError;
+
+      setReviews(reviewsData || []);
+    } catch (err) {
+      console.error('Error fetching data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return <p>Loading...</p>;
+  if (!location) return <p>No Location Assigned. Please contact your administrator.</p>;
+
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">{location.name}</h1>
+      <p className="text-gray-600 mb-6">{location.address}</p>
+
+      <h2 className="text-xl font-semibold mb-3">Recent Reviews</h2>
+      {reviews.length === 0 ? (
+        <p>No reviews yet.</p>
+      ) : (
+        <div className="space-y-4">
+          {reviews.map((review) => (
+            <div key={review.id} className="border rounded-lg p-4 shadow-sm">
+              <p className="font-semibold">{review.author_name}</p>
+              <p className="text-yellow-500">⭐ {review.rating}</p>
+              <p className="text-gray-700 mt-2">{review.text}</p>
+              <p className="text-sm text-gray-400 mt-1">
+                {new Date(review.review_date).toLocaleDateString()}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
