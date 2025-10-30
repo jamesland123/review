@@ -29,13 +29,25 @@ export function LocationDashboard() {
     if (!user) return;
 
     try {
-      const { data: locationData, error: locationError } = await supabase
+      // 🟢 Try to match by user_id first, fallback to email if needed
+      let { data: locationData, error: locationError } = await supabase
         .from('locations')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
       if (locationError) throw locationError;
+
+      if (!locationData && user.email) {
+        const { data: fallbackLocation, error: fallbackError } = await supabase
+          .from('locations')
+          .select('*')
+          .eq('email', user.email)
+          .maybeSingle();
+
+        if (fallbackError) throw fallbackError;
+        locationData = fallbackLocation;
+      }
 
       if (!locationData) {
         alert('No location assigned to your account. Please contact an administrator.');
@@ -66,7 +78,7 @@ export function LocationDashboard() {
     if (searchQuery) {
       filtered = filtered.filter(
         (review) =>
-          review.reviewer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          review.reviewer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           review.review_text?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
@@ -175,7 +187,9 @@ export function LocationDashboard() {
                     <div
                       className="bg-yellow-400 h-2 rounded-full transition-all"
                       style={{
-                        width: `${stats.total > 0 ? ((stats.distribution[rating] || 0) / stats.total) * 100 : 0}%`,
+                        width: `${
+                          stats.total > 0 ? ((stats.distribution[rating] || 0) / stats.total) * 100 : 0
+                        }%`,
                       }}
                     />
                   </div>
@@ -191,7 +205,10 @@ export function LocationDashboard() {
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={20}
+              />
               <input
                 type="text"
                 placeholder="Search reviews..."
@@ -243,7 +260,10 @@ export function LocationDashboard() {
         ) : (
           <div className="space-y-4">
             {filteredReviews.map((review) => (
-              <div key={review.id} className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
+              <div
+                key={review.id}
+                className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow"
+              >
                 <div className="flex items-start gap-4">
                   {review.reviewer_profile_image ? (
                     <img
@@ -254,7 +274,7 @@ export function LocationDashboard() {
                   ) : (
                     <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
                       <span className="text-gray-600 font-medium text-lg">
-                        {review.reviewer_name.charAt(0).toUpperCase()}
+                        {review.reviewer_name?.charAt(0).toUpperCase()}
                       </span>
                     </div>
                   )}
@@ -262,7 +282,9 @@ export function LocationDashboard() {
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <h3 className="font-semibold text-gray-900">{review.reviewer_name}</h3>
+                        <h3 className="font-semibold text-gray-900">
+                          {review.reviewer_name}
+                        </h3>
                         <div className="flex items-center gap-3 mt-1">
                           <StarRating rating={review.rating} size={16} />
                           <span className="text-sm text-gray-500 flex items-center gap-1">
@@ -284,7 +306,9 @@ export function LocationDashboard() {
                     {review.response_text && (
                       <div className="bg-gray-50 border-l-4 border-blue-500 p-4 rounded">
                         <p className="text-sm font-medium text-gray-900 mb-1">Business Response</p>
-                        <p className="text-sm text-gray-700 leading-relaxed">{review.response_text}</p>
+                        <p className="text-sm text-gray-700 leading-relaxed">
+                          {review.response_text}
+                        </p>
                         {review.response_date && (
                           <p className="text-xs text-gray-500 mt-2">
                             {new Date(review.response_date).toLocaleDateString('en-US', {
